@@ -1,0 +1,16 @@
+#!/bin/sh
+cd /opt/fso-lab-devops/provisioners/scripts/aws
+chmod 755 ./initialize_aws_fso_lab_cloud_init.sh
+
+user_name="${aws_ec2_user_name}"
+export user_name
+aws_ec2_hostname="${aws_ec2_hostname}"
+export aws_ec2_hostname
+aws_ec2_domain="${aws_ec2_domain}"
+export aws_ec2_domain
+aws_region_name="${aws_region_name}"
+export aws_region_name
+aws_eks_cluster_name="${aws_eks_cluster_name}"
+export aws_eks_cluster_name
+
+./initialize_aws_fso_lab_cloud_init.sh
