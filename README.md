@@ -1,4 +1,4 @@
-# AppD-FSO-Lab-AWS-EKS
+# AppD FSO Lab AWS EKS
 
 This code repository is a DevOps project that is a subset of the [FSO Lab DevOps](https://github.com/APO-SRE/fso-lab-devops) 
 project. Its specific purpose is to help automate the deployment of AWS resources via Terraform for 
@@ -11,7 +11,7 @@ Terraform Cloud automatically initiates a new Plan action.
 
 ## AWS Architecture
 
-Here is an example of the deployment architecture when deployed to the AWS Cloud Platform:  
+Here is a diagram of the workshop architecture components that are deployed to the AWS Cloud Platform:  
 
 __FSO Lab DevOps: Workshop Deployment on AWS__
 ![Workshop_Deployment_on_AWS](./docs/images/FSO-Lab-DevOps-Workshop-Deployment-on-AWS.png)
