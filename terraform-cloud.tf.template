@@ -1,0 +1,11 @@
+# Terraform Cloud ----------------------------------------------------------------------------------
+terraform {
+  backend "remote" {
+    hostname = "app.terraform.io"
+    organization = "Cisco-SRE"
+
+    workspaces {
+      name = "AppD-FSO-Lab-01-AWS-EKS"
+    }
+  }
+}

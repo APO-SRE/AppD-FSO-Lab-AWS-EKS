@@ -15,6 +15,9 @@ crash.log
 # example.tfvars
 *.tfvars*
 
+# Ignore terraform cloud workspace configuration file.
+terraform-cloud.tf
+
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in
 override.tf
