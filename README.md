@@ -14,4 +14,4 @@ Terraform Cloud automatically initiates a new Plan action.
 Here is an example of the deployment architecture when deployed to the AWS Cloud Platform:  
 
 __FSO Lab DevOps: Workshop Deployment on AWS__
-![Workshop_Deployment_on_AWS](./images/FSO-Lab-DevOps-Workshop-Deployment-on-AWS.png)
+![Workshop_Deployment_on_AWS](./docs/images/FSO-Lab-DevOps-Workshop-Deployment-on-AWS.png)
