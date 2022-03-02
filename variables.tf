@@ -168,7 +168,7 @@ variable "resource_environment_tag" {
 variable "resource_owner_tag" {
   description = "Resource owner tag."
   type        = string
-  default     = "Cisco SRE and AppDynamics Cloud Channel Sales Teams"
+  default     = "Cisco APO Cross-Architectural and AppDynamics Cloud Channel Sales Teams"
 }
 
 variable "resource_project_tag" {
