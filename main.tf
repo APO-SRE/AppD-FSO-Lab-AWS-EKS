@@ -44,6 +44,34 @@ locals {
   ec2_access_role_name      = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-EC2-Access-Role"
   ec2_access_policy_name    = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-EC2-Access-Policy"
   ec2_instance_profile_name = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-EC2-Instance-Profile"
+
+  # define resource tagging here to ensure standardized naming conventions.
+  # fso lab tag names for aws resources.
+  fso_resource_tags = {
+    Environment = var.resource_environment_tag
+    Owner       = var.resource_owner_tag
+    Event       = var.resource_event_tag
+    Project     = var.resource_project_tag
+    Date        = local.current_date
+  }
+
+  # appdynamics tag names for aws resources.
+  appd_resource_tags = {
+    ResourceOwner         = var.resource_owner_email_tag
+    JIRAProject           = "NA"
+    DataClassification    = "Cisco Public"
+    JIRACreation          = "NA"
+    SecurityReview        = "NA"
+    Exception             = "NA"
+    DeploymentEnvironment = "NonProd"
+    CreatedBy             = data.aws_caller_identity.current.arn
+    IntendedPublic        = "True"
+    Service               = "FSOLab"
+    CostCenter            = var.resource_cost_center_tag
+  }
+
+  # if this environment is for appdynamics, merge in 'appd_resource_tags'; otherwise, use 'fso_resource_tags'.
+  resource_tags = substr(var.resource_name_prefix, 0, 4) == "AppD" ? merge(local.fso_resource_tags, local.appd_resource_tags) : local.fso_resource_tags
 }
 
 # Data Sources -------------------------------------------------------------------------------------
@@ -103,13 +131,7 @@ module "vpc" {
   single_nat_gateway   = true
   enable_dns_hostnames = true
 
-  tags = {
-    Environment = var.resource_environment_tag
-    Owner       = var.resource_owner_tag
-    Event       = var.resource_event_tag
-    Project     = var.resource_project_tag
-    Date        = local.current_date
-  }
+  tags = local.resource_tags
 
   public_subnet_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
@@ -130,13 +152,7 @@ module "security_group" {
   description = "Security group for LPAD VM EC2 instance"
   vpc_id      = module.vpc.vpc_id
 
-  tags = {
-    Environment = var.resource_environment_tag
-    Owner       = var.resource_owner_tag
-    Event       = var.resource_event_tag
-    Project     = var.resource_project_tag
-    Date        = local.current_date
-  }
+  tags = local.resource_tags
 
   ingress_cidr_blocks               = ["0.0.0.0/0"]
   ingress_rules                     = ["http-80-tcp", "http-8080-tcp", "https-443-tcp", "all-icmp"]
@@ -171,13 +187,7 @@ module "vm" {
   iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.id
   key_name             = var.aws_ec2_ssh_pub_key_name
 
-  tags = {
-    Environment = var.resource_environment_tag
-    Owner       = var.resource_owner_tag
-    Event       = var.resource_event_tag
-    Project     = var.resource_project_tag
-    Date        = local.current_date
-  }
+  tags = local.resource_tags
 
   subnet_id                   = tolist(module.vpc.public_subnets)[0]
   vpc_security_group_ids      = [module.security_group.security_group_id]
@@ -208,13 +218,7 @@ module "eks" {
   cluster_endpoint_public_access       = var.aws_eks_endpoint_public_access
   cluster_endpoint_public_access_cidrs = var.aws_eks_endpoint_public_access_cidrs
 
-  tags = {
-    Environment = var.resource_environment_tag
-    Owner       = var.resource_owner_tag
-    Event       = var.resource_event_tag
-    Project     = var.resource_project_tag
-    Date        = local.current_date
-  }
+  tags = local.resource_tags
 
   node_groups_defaults = {
     ami_type  = "AL2_x86_64"
@@ -234,13 +238,7 @@ module "eks" {
         GithubOrg   = "terraform-aws-modules"
       }
 
-      additional_tags = {
-        Environment = var.resource_environment_tag
-        Owner       = var.resource_owner_tag
-        Event       = var.resource_event_tag
-        Project     = var.resource_project_tag
-        Date        = local.current_date
-      }
+      additional_tags = local.resource_tags
     }
   }
 
@@ -267,14 +265,7 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "tgw_attachment" {
   vpc_id             = module.vpc.vpc_id
   subnet_ids         = tolist([module.vpc.public_subnets[0], module.vpc.public_subnets[1]])
 
-  tags = {
-    Name        = local.tgw_attachment_name
-    Environment = var.resource_environment_tag
-    Owner       = var.resource_owner_tag
-    Event       = var.resource_event_tag
-    Project     = var.resource_project_tag
-    Date        = local.current_date
-  }
+  tags = merge({ Name = local.tgw_attachment_name }, local.resource_tags)
 }
 
 resource "aws_route" "tgw_route" {
@@ -287,13 +278,7 @@ resource "aws_iam_role" "ec2_access_role" {
   name               = local.ec2_access_role_name
   assume_role_policy = file("${path.module}/policies/ec2-assume-role-policy.json")
 
-  tags = {
-    Environment = var.resource_environment_tag
-    Owner       = var.resource_owner_tag
-    Event       = var.resource_event_tag
-    Project     = var.resource_project_tag
-    Date        = local.current_date
-  }
+  tags = local.resource_tags
 }
 
 resource "aws_iam_role_policy" "ec2_access_policy" {
