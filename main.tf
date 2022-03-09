@@ -66,6 +66,7 @@ locals {
     DeploymentEnvironment = "NonProd"
     CreatedBy             = data.aws_caller_identity.current.arn
     IntendedPublic        = "True"
+    ContainsPII           = "False"
     Service               = "FSOLab"
     CostCenter            = var.resource_cost_center_tag
   }
