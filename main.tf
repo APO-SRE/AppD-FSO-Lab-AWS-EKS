@@ -119,7 +119,7 @@ data "aws_security_group" "eks_remote" {
 # Modules ------------------------------------------------------------------------------------------
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = ">= 3.12"
+  version = ">= 3.13"
 
   name = local.vpc_name
   cidr = var.aws_vpc_cidr_block
@@ -147,7 +147,7 @@ module "vpc" {
 
 module "security_group" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = ">= 4.8"
+  version = ">= 4.9"
 
   name        = local.security_group_name
   description = "Security group for LPAD VM EC2 instance"
@@ -180,7 +180,7 @@ module "security_group" {
 
 module "vm" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = ">= 3.4"
+  version = ">= 3.5"
 
   name                 = local.vm_name
   ami                  = data.aws_ami.fso_lab_ami.id
