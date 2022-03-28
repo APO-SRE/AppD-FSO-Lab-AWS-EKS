@@ -140,11 +140,11 @@ variable "aws_eks_instance_type" {
   default     = ["m5a.xlarge"]
 }
 
-# valid aws eks versions are: 1.17, 1.18, 1.19, 1.20, and 1.21.
+# valid aws eks versions are: 1.18, 1.19, 1.20, and 1.21.
 variable "aws_eks_kubernetes_version" {
   description = "Kubernetes version to use for the EKS cluster."
   type        = string
-  default     = "1.20"
+  default     = "1.21"
 }
 
 variable "lab_ssh_pub_key_name" {
