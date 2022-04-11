@@ -48,26 +48,30 @@ locals {
   # define resource tagging here to ensure standardized naming conventions.
   # fso lab tag names for aws resources.
   fso_resource_tags = {
-    Environment = var.resource_environment_tag
-    Owner       = var.resource_owner_tag
-    Event       = var.resource_event_tag
-    Project     = var.resource_project_tag
-    Date        = local.current_date
+    EnvironmentHome = var.resource_environment_home_tag
+    Owner           = var.resource_owner_tag
+    Event           = var.resource_event_tag
+    Project         = var.resource_project_tag
+    Date            = local.current_date
   }
 
   # appdynamics tag names for aws resources.
   appd_resource_tags = {
     ResourceOwner         = var.resource_owner_email_tag
+    CiscoMailAlias        = var.resource_owner_email_tag
     JIRAProject           = "NA"
     DataClassification    = "Cisco Public"
     JIRACreation          = "NA"
     SecurityReview        = "NA"
     Exception             = "NA"
+    Environment           = "NonProd"
     DeploymentEnvironment = "NonProd"
+    DataTaxonomy          = "Cisco Operations Data"
     CreatedBy             = data.aws_caller_identity.current.arn
     IntendedPublic        = "True"
     ContainsPII           = "False"
     Service               = "FSOLab"
+    ApplicationName       = var.resource_project_tag
     CostCenter            = var.resource_cost_center_tag
   }
 
@@ -119,7 +123,7 @@ data "aws_security_group" "eks_remote" {
 # Modules ------------------------------------------------------------------------------------------
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = ">= 3.13"
+  version = ">= 3.14"
 
   name = local.vpc_name
   cidr = var.aws_vpc_cidr_block

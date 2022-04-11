@@ -159,8 +159,8 @@ variable "resource_name_prefix" {
   default     = "FSO-Lab"
 }
 
-variable "resource_environment_tag" {
-  description = "Resource environment tag."
+variable "resource_environment_home_tag" {
+  description = "Resource environment home tag."
   type        = string
   default     = "Cisco One Lab"
 }
