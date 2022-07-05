@@ -289,7 +289,11 @@ resource "aws_iam_role" "ec2_access_role" {
 resource "aws_iam_role_policy" "ec2_access_policy" {
   name   = local.ec2_access_policy_name
   role   = aws_iam_role.ec2_access_role.id
-  policy = file("${path.module}/policies/ec2-access-policy.json")
+  policy = templatefile("${path.module}/policies/ec2-access-policy-template.json", {
+    aws_region_name   = var.aws_region
+    aws_account_id    = data.aws_caller_identity.current.account_id
+    aws_ec2_user_name = var.aws_ec2_user_name
+  })
 }
 
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
