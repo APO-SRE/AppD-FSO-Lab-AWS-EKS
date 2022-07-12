@@ -10,7 +10,7 @@ provider "kubernetes" {
 # config_path            = "~/.kube/config"
 
   exec {
-    api_version = "client.authentication.k8s.io/v1alpha1"
+    api_version = "client.authentication.k8s.io/v1beta1"
     command = "aws"
     args = ["eks", "get-token", "--cluster-name", data.aws_eks_cluster.cluster.name]
   }
