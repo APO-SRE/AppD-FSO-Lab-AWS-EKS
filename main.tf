@@ -1,19 +1,28 @@
 # Providers ----------------------------------------------------------------------------------------
 provider "aws" {
-  region  = var.aws_region
+  region = var.aws_region
 }
 
 provider "kubernetes" {
-  host                   = data.aws_eks_cluster.cluster.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
-# token                  = data.aws_eks_cluster_auth.cluster.token
-# config_path            = "~/.kube/config"
+  host                   = module.eks_blueprints.eks_cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks_blueprints.eks_cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.this.token
+}
 
-  exec {
-    api_version = "client.authentication.k8s.io/v1beta1"
-    command = "aws"
-    args = ["eks", "get-token", "--cluster-name", data.aws_eks_cluster.cluster.name]
+provider "helm" {
+  kubernetes {
+    host                   = module.eks_blueprints.eks_cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks_blueprints.eks_cluster_certificate_authority_data)
+    token                  = data.aws_eks_cluster_auth.this.token
   }
+}
+
+provider "kubectl" {
+  apply_retry_count      = 10
+  host                   = module.eks_blueprints.eks_cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks_blueprints.eks_cluster_certificate_authority_data)
+  load_config_file       = false
+  token                  = data.aws_eks_cluster_auth.this.token
 }
 
 # Locals -------------------------------------------------------------------------------------------
@@ -31,8 +40,8 @@ locals {
   # NOTE: the eks remote ssh ingress security group contains a "0.0.0.0/0" cidr block rule by default.
   #       when adding our custom cidr blocks, we need to strip off "0.0.0.0/0" (if it exists) to
   #       avoid creating a duplicate rule.
-  ssh_ingress_cidr_blocks = sort(toset(split(",", join(",", tolist([var.aws_ssh_ingress_cidr_blocks, var.cisco_ssh_ingress_cidr_blocks, "0.0.0.0/0"])))))
-  ssh_ingress_cidr_blocks_length = length(local.ssh_ingress_cidr_blocks)
+  ssh_ingress_cidr_blocks            = sort(toset(split(",", join(",", tolist([var.aws_ssh_ingress_cidr_blocks, var.cisco_ssh_ingress_cidr_blocks, "0.0.0.0/0"])))))
+  ssh_ingress_cidr_blocks_length     = length(local.ssh_ingress_cidr_blocks)
   eks_remote_ssh_ingress_cidr_blocks = slice(local.ssh_ingress_cidr_blocks, 1, local.ssh_ingress_cidr_blocks_length)
 
   # define resource names here to ensure standardized naming conventions.
@@ -40,6 +49,7 @@ locals {
   security_group_name       = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-Security-Group"
   vm_name                   = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-VM"
   cluster_name              = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-EKS"
+  node_group_name           = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-Node-Group"
   tgw_attachment_name       = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-TGW-Attachment"
   ec2_access_role_name      = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-EC2-Access-Role"
   ec2_access_policy_name    = "${local.lab_resource_prefix}-${lower(random_string.suffix.result)}-EC2-Access-Policy"
@@ -80,10 +90,13 @@ locals {
 }
 
 # Data Sources -------------------------------------------------------------------------------------
+# find the user currently in use by aws.
 data "aws_caller_identity" "current" {
 }
 
+# availability zones to use in our solution.
 data "aws_availability_zones" "available" {
+  state = "available"
 }
 
 data "aws_ami" "fso_lab_ami" {
@@ -91,7 +104,7 @@ data "aws_ami" "fso_lab_ami" {
   owners      = ["self"]
 
   filter {
-    name = "name"
+    name   = "name"
     values = [var.aws_ec2_source_ami_filter]
   }
 }
@@ -104,26 +117,26 @@ data "aws_ec2_transit_gateway" "tgw" {
 }
 
 data "aws_eks_cluster" "cluster" {
-  name = module.eks.cluster_id
+  name = module.eks_blueprints.eks_cluster_id
 }
 
-data "aws_eks_cluster_auth" "cluster" {
-  name = module.eks.cluster_id
+data "aws_eks_cluster_auth" "this" {
+  name = module.eks_blueprints.eks_cluster_id
 }
 
 data "aws_security_group" "eks_remote" {
-  vpc_id  = module.vpc.vpc_id
+  vpc_id = module.vpc.vpc_id
 
   filter {
     name   = "tag:eks"
-    values = toset([module.eks.node_groups.node-group.node_group_name])
+    values = toset([trimprefix("${module.eks_blueprints.managed_node_groups_id[0]}", "${module.eks_blueprints.eks_cluster_id}:")])
   }
 }
 
 # Modules ------------------------------------------------------------------------------------------
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = ">= 3.14"
+  version = ">= 3.16"
 
   name = local.vpc_name
   cidr = var.aws_vpc_cidr_block
@@ -216,42 +229,49 @@ module "vm" {
   }))
 }
 
-module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "= 17.24"
+module "eks_blueprints" {
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.12.1"
 
-  cluster_name    = local.cluster_name
-  cluster_version = var.aws_eks_kubernetes_version
-  vpc_id          = module.vpc.vpc_id
-  subnets         = module.vpc.public_subnets
+  cluster_name       = local.cluster_name
+  cluster_version    = var.aws_eks_kubernetes_version
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.public_subnets
 
   cluster_endpoint_public_access       = var.aws_eks_endpoint_public_access
   cluster_endpoint_public_access_cidrs = var.aws_eks_endpoint_public_access_cidrs
 
   tags = local.resource_tags
 
-  node_groups_defaults = {
-    ami_type  = "AL2_x86_64"
-    disk_size = 80
-  }
+  # eks managed node groups.
+  managed_node_groups = {
+    managed_node_group = {
+      node_group_name = local.node_group_name
+      instance_types  = var.aws_eks_instance_type
+      capacity_type   = "ON_DEMAND"
+      ami_type        = "AL2_x86_64"
+      subnet_type     = "public"
+      subnet_ids      = module.vpc.public_subnets
 
-  node_groups = {
-    "node-group" = {
-      desired_capacity = var.aws_eks_desired_node_count
-      min_capacity     = var.aws_eks_min_node_count
-      max_capacity     = var.aws_eks_max_node_count
-      instance_types   = var.aws_eks_instance_type
-      key_name         = var.lab_ssh_pub_key_name
+      # Scaling Config
+      desired_size = var.aws_eks_desired_node_count
+      min_size     = var.aws_eks_min_node_count
+      max_size     = var.aws_eks_max_node_count
+      disk_size    = 80
 
       k8s_labels = {
-        GithubRepo  = "terraform-aws-eks"
-        GithubOrg   = "terraform-aws-modules"
+        GithubRepo = "terraform-aws-eks-blueprints"
+        GithubOrg  = "terraform-aws-modules"
       }
 
       additional_tags = local.resource_tags
+
+      remote_access         = true
+      ec2_ssh_key           = var.lab_ssh_pub_key_name
+      ssh_security_group_id = null
     }
   }
 
+  # list of additional roles admin in the cluster.
   map_roles = [
     {
       rolearn  = aws_iam_role.ec2_access_role.arn
@@ -353,7 +373,7 @@ resource "aws_security_group_rule" "eks_worker_icmp_ingress" {
   protocol          = "icmp"
   description       = "Allow ping traffic to EKS worker nodes."
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = module.eks.worker_security_group_id
+  security_group_id = module.eks_blueprints.worker_node_security_group_id
 }
 
 resource "aws_security_group_rule" "eks_worker_tcp_ingress" {
@@ -363,7 +383,7 @@ resource "aws_security_group_rule" "eks_worker_tcp_ingress" {
   protocol          = "tcp"
   description       = "Allow all TCP traffic from Cisco data center."
   cidr_blocks       = toset([var.cisco_tcp_ingress_cidr_blocks])
-  security_group_id = module.eks.worker_security_group_id
+  security_group_id = module.eks_blueprints.worker_node_security_group_id
 }
 
 resource "aws_security_group_rule" "eks_worker_all_ingress" {
@@ -373,20 +393,20 @@ resource "aws_security_group_rule" "eks_worker_all_ingress" {
   protocol                 = "all"
   description              = "Allow all traffic from the LPAD VM Security Group."
   source_security_group_id = module.security_group.security_group_id
-  security_group_id        = module.eks.worker_security_group_id
+  security_group_id        = module.eks_blueprints.worker_node_security_group_id
 }
 
 resource "null_resource" "kubectl_trigger" {
   # fire the trigger when the eks cluster requires re-provisioning.
   triggers = {
-    eks_cluster_id = module.eks.cluster_id
+    eks_cluster_id = module.eks_blueprints.eks_cluster_id
   }
 
   # execute the following 'local-exec' provisioners each time the trigger is invoked.
   # run aws cli to retrieve the kubernetes config when the eks cluster is ready.
   provisioner "local-exec" {
     working_dir = "."
-    command = "aws eks --region ${var.aws_region} update-kubeconfig --name ${local.cluster_name}"
+    command     = "aws eks --region ${var.aws_region} update-kubeconfig --name ${local.cluster_name}"
   }
 }
 
@@ -399,7 +419,7 @@ resource "null_resource" "ansible_trigger" {
   # execute the following 'local-exec' provisioners each time the trigger is invoked.
   # generate the ansible aws hosts inventory using 'cat' and Heredoc.
   provisioner "local-exec" {
-    working_dir = "."
+    working_dir = "../../../../provisioners/ansible/fso-lab"
     command     = <<EOD
 cat <<EOF > aws_hosts.inventory
 [fso_lab_vm]

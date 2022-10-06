@@ -7,20 +7,20 @@ variable "aws_region" {
 
 variable "aws_vpc_cidr_block" {
   description = "The CIDR block for the VPC."
-  type    = string
-  default = "172.20.0.0/22"
+  type        = string
+  default     = "172.20.0.0/22"
 }
 
 variable "aws_vpc_public_subnets" {
   description = "A list of public subnets inside the VPC."
-  type    = list(string)
-  default = ["172.20.0.0/24", "172.20.1.0/24", "172.20.2.0/24"]
+  type        = list(string)
+  default     = ["172.20.0.0/24", "172.20.1.0/24", "172.20.2.0/24"]
 }
 
 variable "aws_vpc_private_subnets" {
   description = "A list of private subnets inside the VPC."
-  type    = list(string)
-  default = ["172.20.3.0/24"]
+  type        = list(string)
+  default     = ["172.20.3.0/24"]
 }
 
 variable "aws_ssh_ingress_cidr_blocks" {
@@ -43,8 +43,8 @@ variable "aws_cloud9_ssh_ingress_cidr_blocks" {
 
 variable "cisco_tgw_owner_id" {
   description = "Cisco SRE AWS account ID that owns the EC2 Transit Gateway."
-  type    = list(string)
-  default = ["496972728175"]
+  type        = list(string)
+  default     = ["496972728175"]
 }
 
 variable "cisco_tcp_ingress_cidr_blocks" {
@@ -140,7 +140,7 @@ variable "aws_eks_instance_type" {
   default     = ["m5a.xlarge"]
 }
 
-# valid aws eks versions are: 1.19, 1.20, 1.21, 1.22, and 1.23.
+# valid aws eks versions are: 1.20, 1.21, 1.22, and 1.23.
 variable "aws_eks_kubernetes_version" {
   description = "Kubernetes version to use for the EKS cluster."
   type        = string
@@ -197,6 +197,7 @@ variable "resource_cost_center_tag" {
 
 variable "map_roles" {
   description = "Additional IAM roles to add to the aws-auth configmap."
+
   type = list(object({
     rolearn  = string
     username = string
@@ -214,6 +215,7 @@ variable "map_roles" {
 
 variable "map_users" {
   description = "Additional IAM users to add to the aws-auth configmap."
+
   type = list(object({
     userarn  = string
     username = string
