@@ -419,7 +419,7 @@ resource "null_resource" "ansible_trigger" {
   # execute the following 'local-exec' provisioners each time the trigger is invoked.
   # generate the ansible aws hosts inventory using 'cat' and Heredoc.
   provisioner "local-exec" {
-    working_dir = "../../../../provisioners/ansible/fso-lab"
+    working_dir = "."
     command     = <<EOD
 cat <<EOF > aws_hosts.inventory
 [fso_lab_vm]
