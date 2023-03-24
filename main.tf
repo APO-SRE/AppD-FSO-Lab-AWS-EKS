@@ -230,7 +230,7 @@ module "vm" {
 }
 
 module "eks_blueprints" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.25.0"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.26.0"
 
   cluster_name       = local.cluster_name
   cluster_version    = var.aws_eks_kubernetes_version
