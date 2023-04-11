@@ -145,9 +145,10 @@ module "vpc" {
   public_subnets  = var.aws_vpc_public_subnets
   private_subnets = var.aws_vpc_private_subnets
 
-  enable_nat_gateway   = true
-  single_nat_gateway   = true
-  enable_dns_hostnames = true
+  enable_nat_gateway      = true
+  single_nat_gateway      = true
+  enable_dns_hostnames    = true
+  map_public_ip_on_launch = true
 
   tags = local.resource_tags
 
