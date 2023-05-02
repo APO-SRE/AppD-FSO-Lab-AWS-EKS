@@ -198,7 +198,7 @@ module "security_group" {
 
 module "vm" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = ">= 4.5"
+  version = ">= 5.0"
 
   name                 = local.vm_name
   ami                  = data.aws_ami.fso_lab_ami.id
@@ -231,7 +231,7 @@ module "vm" {
 }
 
 module "eks_blueprints" {
-  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.29.0"
+  source = "github.com/aws-ia/terraform-aws-eks-blueprints?ref=v4.30.0"
 
   cluster_name       = local.cluster_name
   cluster_version    = var.aws_eks_kubernetes_version
