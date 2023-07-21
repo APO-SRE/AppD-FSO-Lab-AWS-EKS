@@ -136,7 +136,7 @@ data "aws_security_group" "eks_remote" {
 # Modules ------------------------------------------------------------------------------------------
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = ">= 5.0"
+  version = ">= 5.1"
 
   name = local.vpc_name
   cidr = var.aws_vpc_cidr_block
