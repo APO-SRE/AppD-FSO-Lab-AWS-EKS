@@ -32,7 +32,7 @@ variable "aws_ssh_ingress_cidr_blocks" {
 variable "cisco_ssh_ingress_cidr_blocks" {
   description = "The ingress CIDR blocks for inbound ssh traffic from Cisco networks."
   type        = string
-  default     = "128.107.248.205/32,72.163.220.53/32,209.234.175.138/32,173.38.208.173/32,173.38.220.54/32"
+  default     = "128.107.241.0/24,72.163.220.53/32,209.234.175.138/32,173.38.208.173/32,173.38.220.54/32"
 }
 
 variable "aws_cloud9_ssh_ingress_cidr_blocks" {
@@ -136,11 +136,11 @@ variable "aws_eks_max_node_count" {
 variable "aws_eks_instance_type" {
   description = "AWS EKS Node Group instance type."
   type        = list(string)
-# default     = ["m5a.large"]
-  default     = ["m5a.xlarge"]
+# default     = ["t3a.large"]
+  default     = ["t3a.xlarge"]
 }
 
-# valid aws eks versions are: 1.23, 1.24, 1.25, 1.26, and 1.27.
+# valid aws eks versions are: 1.24, 1.25, 1.26, 1.27, and 1.28.
 variable "aws_eks_kubernetes_version" {
   description = "Kubernetes version to use for the EKS cluster."
   type        = string
